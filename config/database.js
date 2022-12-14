@@ -7,7 +7,7 @@ mongoose.set('strictQuery', false);
 async function connectMongoose() {
     try{
         await mongoose.connect(
-            "mongodb://127.0.0.1:27017/VegatableShop",
+            "mongodb+srv://admin-Loi:Han12022021@cluster0.cdpzsch.mongodb.net/VegatableShop?retryWrites=true&w=majority",
             { useNewUrlParser: true, useUnifiedTopology: true },
             () => {
                 console.log("Connected to MongoDB");
