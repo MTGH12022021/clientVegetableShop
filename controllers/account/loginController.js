@@ -1,6 +1,6 @@
 const User = require("../../models/User");
 const passport = require("passport");
-
+ 
 function getLogin(req, res) {
     if (req.user) {
         res.redirect("/");
@@ -28,6 +28,9 @@ function postLogin(req, res, next) {
         req.logIn(user, function (err) {
             if (err) {
                 return next(err);
+            }
+            if (req.user.status == false) {
+                return res.redirect('/my-account/logout')
             }
             return res.redirect('/');
         });

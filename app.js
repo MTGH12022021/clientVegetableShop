@@ -1,75 +1,149 @@
-﻿//khai bao cac thu vien can thiet
+// todo module dung de quan ly soucre code
 const express = require("express");
-const exphbs = require("express-handlebars");
-const path = require("path");
 const bodyParser = require("body-parser");
-const Handlebars = require("handlebars");
-const cors = require("cors");
-const helpers = require("./helpers/viewEngine.js");
+const expressHandlebarsSections = require("express-handlebars-sections");
+const path = require("path");
+const numeral = require("numeral");
 const session = require("express-session");
-
-const privateValue = require("./config/env");
-const passport = require("./config/passport");
+const exphbs = require("express-handlebars");
+require("dotenv");
+// todo cau hinh router
+const router = require("./routes/index");
+// //todo cau hinh  config
 const db = require("./config/database");
-const {
-  allowInsecurePrototypeAccess,
-} = require("@handlebars/allow-prototype-access");
-var corsOptions = {
-    origin: "http://localhost:5000"
-};
+const passport = require("./config/passport");
+const apiShoppingCartRouter = require("./api/shopping-cart");
+const sessionHandler = require("./middlewares/sessionHandler");
+const userShoppingCart = require("./middlewares/userShoppingCart");
 // todo cau hinh server
-let PORT = privateValue.port;
-const app = express();
+let PORT = process.env.PORT;
+//todo cau hinh hbs
+const hbs = exphbs.create({
+  extname: "hbs",
+  defaultLayout: "main",
+  layoutsDir: __dirname + "/views/layouts",
+  partialsDir: __dirname + "/views/partials",
+  helpers: {
+    // Function to do basic mathematical operation in handlebar
+    math: function (lvalue, operator, rvalue) {
+      lvalue = parseFloat(lvalue);
+      rvalue = parseFloat(rvalue);
+      return {
+        "+": lvalue + rvalue,
+        "-": lvalue - rvalue,
+        "*": lvalue * rvalue,
+        "/": lvalue / rvalue,
+        "%": lvalue % rvalue,
+      }[operator];
+    },
+    format: (val) => numeral(val).format("0,0") + " đ",
+    time: (val, current, block) => {
+      var accum = "";
+      for (var i = 0; i < val; ++i) accum += block.fn(i + current);
+      return accum;
+    },
+    currentPage: (val, block) => {
+      var accum = "";
+      accum += block.fn(val);
+      return accum;
+    },
+    rightPage: (val) => Number(val) + 1,
+    leftPage: (val) => Number(val) - 1,
+    addTwo: (val) => Number(val) + 2,
+    ifCond: (v1, operator, v2, options) => {
+      switch (operator) {
+        case "==":
+          return v1 == v2 ? options.fn(this) : options.inverse(this);
+        case "===":
+          return v1 === v2 ? options.fn(this) : options.inverse(this);
+        case "!=":
+          return v1 != v2 ? options.fn(this) : options.inverse(this);
+        case "!==":
+          return v1 !== v2 ? options.fn(this) : options.inverse(this);
+        case "<":
+          return v1 < v2 ? options.fn(this) : options.inverse(this);
+        case "<=":
+          return v1 <= v2 ? options.fn(this) : options.inverse(this);
+        case ">":
+          return v1 > v2 ? options.fn(this) : options.inverse(this);
+        case ">=":
+          return v1 >= v2 ? options.fn(this) : options.inverse(this);
+        case "&&":
+          return v1 && v2 ? options.fn(this) : options.inverse(this);
+        case "||":
+          return v1 || v2 ? options.fn(this) : options.inverse(this);
+        default:
+          return options.inverse(this);
+      }
+    },
 
-//cau hinh file hbs
-app.engine(
-  "hbs",
-  exphbs({
-    extname: ".hbs",
-    defaultLayout: "main",
-    handlebars: allowInsecurePrototypeAccess(Handlebars),
-    helpers: helpers,
+    pageIf: (currentPage, operator, value, options) => {
+      switch (operator) {
+        case "==":
+          return currentPage == value
+            ? options.fn(currentPage)
+            : options.inverse(currentPage);
+        default:
+          return options.inverse(this);
+      }
+    },
+  },
+});
+
+const app = express();
+//todo server use
+expressHandlebarsSections(hbs);
+app.engine("hbs", hbs.engine);
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "hbs");
+app.use(express.static(path.join(__dirname, "/public")));
+
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
   })
 );
-app.set("view engine", "hbs");
+app.use(express.json());
 
-//cau hinh passport
-app.use(require('cookie-parser')());
-app.set('trust proxy', 1) // trust first proxy
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
+
+app.use(require("cookie-parser")());
 app.use(
   session({
-    secret: "very secret keyboard cat",
-    resave: false,
-    saveUninitialized: false,
-    // cookie: { secure: true },
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 365,
+    },
+    resave: true,
+    saveUninitialized: true,
+    secret: "cats",
   })
 );
 app.use(passport.initialize());
 app.use(passport.session());
-// body-parser
-app.use(cors(corsOptions));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "/public")));
 
-const router = require("./routes/index");
+//todo database
 db.connectMongoose();
+
+//todo use api router shoping card
+app.use(sessionHandler);
+app.use("/api/shoppingCart", apiShoppingCartRouter);
+app.use(userShoppingCart);
+//todo cac luong thu thi
 router(app);
-//render layout error
+
+//todo render error
 app.use((req, res) => {
   res.render("errors/404", { layout: false });
 });
 
-app.use((err, req, res, next) => {
-  console.log(err.message);
-  res.status(500).render("errors/500", { layout: false, error: err.message });
-});
-
 //todo server listen
 if (PORT == null || PORT == "") {
-  PORT = 5000;
+  PORT = 3000;
 }
-
 app.listen(PORT, function () {
   console.log("Server has started successfully");
 });

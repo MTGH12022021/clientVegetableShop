@@ -1,16 +1,21 @@
-﻿const passport = require("passport");
-const Admin = require("../models/admin.model");
+const User = require("../models/User");
+const passport = require("passport");
 
-passport.use(Admin.createStrategy());
-
-passport.serializeUser(function(user, done) {
-    done(null, user.id);
-  });
-  
-  passport.deserializeUser(function(id, done) {
-    Admin.findById(id, function (err, user) {
-      done(err, user);
+passport.use(User.createStrategy());
+passport.serializeUser(function (user, done) {      // ma hoa
+    // console.log(user);
+    done(null, {
+        email: user.email,
+        name: user.name,
+        address: user.address,
+        id: user._id,
+        status: user.status
     });
-  });
+});
 
-module.exports = passport;
+passport.deserializeUser(function (user, done) {      // giai ma
+    return done(null, user);
+});
+
+
+module.exports = passport
