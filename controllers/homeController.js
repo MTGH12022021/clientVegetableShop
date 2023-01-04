@@ -1,14 +1,12 @@
-const homeController = {
-  index: function (req, res) {
-    if (req.user) {
-      res.render("./home/home.hbs", {
-        user: req.user
-      });
+﻿const home = {
+    index: function(req,res){
+        if(req.user){
+            res.render("home.hbs",{});
+        }
+        else{
+            res.redirect("/admin/login");
+        }
     }
-    else {
-      res.render("./home/home.hbs", {});
-    }
-  },
-};
+}
 
-module.exports = homeController;
+module.exports = home;
