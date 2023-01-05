@@ -1,5 +1,5 @@
-﻿const env = require("dotenv");
-const mongoose = require("mongoose");
+﻿const mongoose = require("mongoose");
+const privateValue = require("./env");
 
 //set up mongoose
 mongoose.set('strictQuery', false);
@@ -7,7 +7,7 @@ mongoose.set('strictQuery', false);
 async function connectMongoose() {
     try{
         await mongoose.connect(
-            "mongodb://127.0.0.1:27017/VegatableShop",
+            privateValue.urlMongo + privateValue.databaseVegetable,
             { useNewUrlParser: true, useUnifiedTopology: true },
             () => {
                 console.log("Connected to MongoDB");
