@@ -5,7 +5,7 @@ const privateValue = require("./env");
 mongoose.set('strictQuery', false);
 
 async function connectMongoose() {
-    try{
+    try {
         await mongoose.connect(
             privateValue.urlMongo + privateValue.databaseVegetable,
             { useNewUrlParser: true, useUnifiedTopology: true },
@@ -14,9 +14,9 @@ async function connectMongoose() {
             }
         );
     }
-    catch(e){
+    catch (e) {
         console.log("Disconnect to mongoDB");
     }
 }
 
-module.exports = {connectMongoose};
+module.exports = { connectMongoose };
